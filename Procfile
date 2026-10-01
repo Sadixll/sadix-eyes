@@ -1,1 +1,1 @@
-worker: python eyes.py
+web: python eyes.py
