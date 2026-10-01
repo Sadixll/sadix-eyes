@@ -46,7 +46,7 @@ def _neptune_html():
   .title { position:absolute;z-index:9;top:50%;left:clamp(20px,7vw,100px);transform:translateY(-50%);pointer-events:none; }
   .title .eyebrow { display:flex;align-items:center;gap:11px;color:rgba(99,234,255,.8);font-size:9px;letter-spacing:.3em;text-transform:uppercase; }
   .title .eyebrow::before { content:"";width:38px;height:1px;background:var(--cyan);box-shadow:0 0 14px var(--cyan); }
-  h1 { margin:18px 0 0;color:#e9ffff;font-family:Georgia,"Times New Roman",serif;font-size:clamp(58px,10vw,130px);font-weight:400;line-height:.8;letter-spacing:-.08em;text-shadow:0 0 35px rgba(99,234,255,.25); }
+  h1 { margin:18px 0 0;color:#e9ffff;font-family:Georgia,"Times New Roman",serif;font-size:clamp(20px,4vw,42px);font-weight:400;line-height:.8;letter-spacing:-.08em;text-shadow:0 0 35px rgba(99,234,255,.25); }
   h1 span { display:block;color:transparent;-webkit-text-stroke:1px rgba(99,234,255,.68);font-size:.48em;letter-spacing:.02em; }
   .info { max-width:285px;margin:22px 0 0;color:rgba(223,251,255,.45);font-size:11px;line-height:1.7; }
   .readout { position:absolute;z-index:9;right:clamp(20px,6vw,90px);top:50%;display:grid;gap:14px;transform:translateY(-50%);pointer-events:none;color:rgba(223,251,255,.5);font-size:8px;letter-spacing:.17em;text-transform:uppercase;writing-mode:vertical-rl; }
