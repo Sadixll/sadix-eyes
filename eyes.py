@@ -65,7 +65,7 @@ def _neptune_html():
 <main class="space" id="space">
   <canvas id="cosmos"></canvas><div class="scan"></div><div class="grain"></div>
   <header class="top"><div class="brand"><div class="mark">◉</div><div><strong>SADIXLL 🇹🇯</strong><small>deep space / blue giant</small></div></div><div class="signal"><i></i> orbital signal locked</div></header>
-  <section class="title"><div class="eyebrow">sector 08 / outer system</div><h1><span>АТЦАЛОМ ЯНГА 😂</span></h1><p class="info"> ДАР ВАКТОЕ КИ КАТИМ МЕБДИ НАБДИ АКУ ОЗИ МЕХОХИ КИ ББДИ НАБДИ НАМЕБДИ ! .</p></section>
+  <section class="title"><div class="eyebrow">sector 08 / outer system</div><h1><span>Asalom Yanga😂</span></h1><p class="info"> ДАР ВАКТОЕ КИ КАТИМ МЕБДИ НАБДИ АКУ ОЗИ МЕХОХИ КИ ББДИ НАБДИ НАМЕБДИ ! .</p></section>
   <aside class="readout"><b>−218°C</b><span>atmospheric motion / active</span><b>4.5B km</b></aside>
   <footer class="bottom"><span>deep field / <b>S A L O M</b></span><span class="bar"></span><span>touch to orbit</span></footer>
 </main>
