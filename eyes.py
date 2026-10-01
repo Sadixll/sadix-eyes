@@ -46,7 +46,7 @@ def _neptune_html():
   .title { position:absolute;z-index:9;top:50%;left:clamp(20px,7vw,100px);transform:translateY(-50%);pointer-events:none; }
   .title .eyebrow { display:flex;align-items:center;gap:11px;color:rgba(99,234,255,.8);font-size:9px;letter-spacing:.3em;text-transform:uppercase; }
   .title .eyebrow::before { content:"";width:38px;height:1px;background:var(--cyan);box-shadow:0 0 14px var(--cyan); }
-  h1 { margin:18px 0 0;color:#e9ffff;font-family:Georgia,"Times New Roman",serif;font-size:clamp(20px,4vw,42px);font-weight:400;line-height:.8;letter-spacing:-.08em;text-shadow:0 0 35px rgba(99,234,255,.25); }
+  h1 { margin:18px 0 0;color:#e9ffff;font-family:Georgia,"Times New Roman",serif;font-size:clamp(58px,10vw,130px);font-weight:400;line-height:.8;letter-spacing:-.08em;text-shadow:0 0 35px rgba(99,234,255,.25); }
   h1 span { display:block;color:transparent;-webkit-text-stroke:1px rgba(99,234,255,.68);font-size:.48em;letter-spacing:.02em; }
   .info { max-width:285px;margin:22px 0 0;color:rgba(223,251,255,.45);font-size:11px;line-height:1.7; }
   .readout { position:absolute;z-index:9;right:clamp(20px,6vw,90px);top:50%;display:grid;gap:14px;transform:translateY(-50%);pointer-events:none;color:rgba(223,251,255,.5);font-size:8px;letter-spacing:.17em;text-transform:uppercase;writing-mode:vertical-rl; }
@@ -65,9 +65,9 @@ def _neptune_html():
 <main class="space" id="space">
   <canvas id="cosmos"></canvas><div class="scan"></div><div class="grain"></div>
   <header class="top"><div class="brand"><div class="mark">◉</div><div><strong>SADIXLL 🇹🇯</strong><small>deep space / blue giant</small></div></div><div class="signal"><i></i> orbital signal locked</div></header>
-  <section class="title"><div class="eyebrow">sector 08 / outer system</div><h1><span>Asalom Yanga😂</span></h1><p class="info"> ДАР ВАКТОЕ КИ КАТИМ МЕБДИ НАБДИ АКУ ОЗИ МЕХОХИ КИ ББДИ НАБДИ НАМЕБДИ ! .</p></section>
+  <section class="title"><div class="eyebrow">sector 08 / outer system</div><h1><span>ASASLOM YANGA</span></h1><p class="info">Да вактое ки катим мебди набди А ози мехохи ббди набди намебди.</p></section>
   <aside class="readout"><b>−218°C</b><span>atmospheric motion / active</span><b>4.5B km</b></aside>
-  <footer class="bottom"><span>deep field / <b>S A L O M</b></span><span class="bar"></span><span>touch to orbit</span></footer>
+  <footer class="bottom"><span>deep field / <b>rendering live</b></span><span class="bar"></span><span>touch to orbit</span></footer>
 </main>
 <script>
 (() => {
